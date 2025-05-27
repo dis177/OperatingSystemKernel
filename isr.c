@@ -1,6 +1,8 @@
 #include "isr.h"
 #include "pic.h"
 #include "pit.h"
+#include "keyboard.h"
+#include "kstdio.h"
 #include <stdint.h>
 
 static void vga_write_dec(uint32_t n)
@@ -20,16 +22,32 @@ static void vga_write_dec(uint32_t n)
     }
 }
 
+static void dump_regs(struct regs *r)
+{
+    kprintf("\nException %d  err=%x  eip=%x  cs=%x  eflags=%x\n",
+            r->int_no, r->err_code, r->eip, r->cs, r->eflags);
+    kprintf("eax=%x ebx=%x ecx=%x edx=%x esi=%x edi=%x esp=%x ebp=%x\n",
+            r->eax, r->ebx, r->ecx, r->edx,
+            r->esi, r->edi, r->esp, r->ebp);
+}
 
 void isr_handler(struct regs *r)
 {
-    if (r->int_no == 0x20) {      /* IRQ0：定时器 */
-        pit_tick();
-        vga_write_dec(pit_get_ticks());
+    switch (r->int_no) {
+        case 0x20:                       /* IRQ0：PIT */
+            pit_tick();
+            vga_write_dec(pit_get_ticks());
+            break;
+
+        case 0x21:                       /* IRQ1：键盘 */
+            keyboard_handle_irq();
+            break;
+
+        default:                         /* 其余：异常或未处理 IRQ */
+            dump_regs(r);
+            panic("Unhandled interrupt");
     }
 
-    /* 向 PIC 发送 EOI */
     if (r->int_no >= 0x20 && r->int_no <= 0x2F)
         pic_send_eoi(r->int_no - 0x20);
 }
-

@@ -8,7 +8,7 @@ CFLAGS  = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS = -T linker.ld -nostdlib
 
 # ======= 对象文件 =========================================================
-OBJS = boot.o kernel.o gdt.o idt.o tables.o pic.o pit.o isr.o isr_stub.o
+OBJS = boot.o kernel.o gdt.o idt.o tables.o pic.o pit.o isr.o isr_stub.o keyboard.o kstdio.o
 
 # ======= 默认目标 =========================================================
 all: myos.iso
@@ -39,6 +39,12 @@ pit.o: pit.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 isr.o: isr.c
+	$(CC) $(CFLAGS) -c $< -o $@
+	
+keyboard.o: keyboard.c
+	$(CC) $(CFLAGS) -c $< -o $@
+	
+kstdio.o: kstdio.c
 	$(CC) $(CFLAGS) -c $< -o $@
 	
 # ---------- 链接 → 内核二进制 ----------
